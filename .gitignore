@@ -1,0 +1,25 @@
+# File konfigurasi database — JANGAN PERNAH diupload ke GitHub
+config/db.php
+
+# File environment lokal
+.env
+*.env
+
+# Log file dari PHP
+*.log
+error_log
+
+# Folder cache
+cache/
+tmp/
+
+# File sistem Windows
+Thumbs.db
+desktop.ini
+
+# File sistem macOS
+.DS_Store
+
+# Folder dependencies (kalau nanti pakai Composer)
+vendor/
+node_modules/

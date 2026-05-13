@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KantinKu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-[#F1F7F6] min-h-screen text-slate-800">
+
+  <!-- ══════════════════════════════
+       LOADING OVERLAY
+       Muncul saat data sedang diambil dari DB
+  ══════════════════════════════ -->
+  <div id="loadingOverlay" style="display:none"
+    class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-3">
+    <div class="w-10 h-10 border-4 border-[#2CC295] border-t-transparent rounded-full animate-spin"></div>
+    <p class="text-sm font-bold text-[#03624C]">Memuat data...</p>
+  </div>
+
+  <!-- ══════════════════════════════
+       TOAST NOTIFIKASI
+       Muncul di pojok kanan atas untuk feedback aksi
+  ══════════════════════════════ -->
+  <div id="toastNotif" class="toast-notif"></div>
+
+  <!-- ══════════════════════════════
+       KONTEN UTAMA
+  ══════════════════════════════ -->
+  <div class="max-w-6xl mx-auto py-8 px-4">
+
+    <!-- ── HEADER ── -->
+    <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+      <div class="flex items-center gap-4">
+        <img src="assets/img/logo.png" alt="Logo KantinKu Pro" class="w-16 h-16 object-contain">
+        <div>
+          <h1 class="text-2xl font-extrabold text-[#03624C]">
+            KantinKu
+            <span class="text-xs bg-[#2CC295] text-white px-2 py-0.5 rounded-md ml-1 align-top uppercase font-bold">Pro</span>
+          </h1>
+          <p class="text-[10px] text-slate-500 font-bold tracking-[0.3em] uppercase mt-1">Cerdas Kelola Uang Saku</p>
+        </div>
+      </div>
+
+      <!-- Info user + Tombol logout -->
+      <div class="flex items-center gap-3">
+        <div class="bg-white px-5 py-2 rounded-full shadow-sm border border-slate-100 flex items-center gap-2">
+          <span class="text-sm">📅</span>
+          <p id="displayDate" class="text-sm font-semibold text-slate-600"></p>
+        </div>
+        <div class="bg-white px-5 py-2 rounded-full shadow-sm border border-slate-100 flex items-center gap-2">
+          <span class="text-sm">👤</span>
+          <p id="namaUser" class="text-sm font-bold text-[#03624C]">...</p>
+        </div>
+        <!-- Tambahkan tombol ini sebelum tombol Keluar -->
+<a href="profil.html"
+   class="bg-[#03624C]/10 hover:bg-[#03624C] text-[#03624C] hover:text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all border border-[#03624C]/20">
+  👤 Profil
+</a>
+        <button
+          onclick="logout()"
+          class="bg-red-50 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all border border-red-100 hover:border-red-500">
+          Keluar
+        </button>
+      </div>
+    </header>
+
+    <!-- ── MAIN GRID ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <!-- ════ KOLOM KIRI (4/12) ════ -->
+      <div class="lg:col-span-4 space-y-6">
+
+        <!-- Card Saldo -->
+        <div class="bg-[#03624C] p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
+          <div class="relative z-10">
+            <div class="flex justify-between items-start mb-6 border-b border-white/10 pb-4">
+              <div>
+                <p class="text-[10px] opacity-70 uppercase tracking-widest font-extrabold">Sisa Saldo Kamu</p>
+                <h2 id="balanceDisplay" class="text-4xl font-bold mt-1 tracking-tight">Rp 0</h2>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  onclick="toggleTopUpInput()"
+                  title="Tambah Uang Masuk"
+                  class="w-10 h-10 bg-[#2CC295] hover:bg-white text-white hover:text-[#03624C] rounded-full flex items-center justify-center transition-all active:scale-95 text-2xl font-bold border-2 border-white/10">
+                  +
+                </button>
+              </div>
+            </div>
+
+            <!-- Form Top Up -->
+            <div id="topUpContainer" class="hidden animate-fadeIn mb-5 p-4 bg-white/10 rounded-2xl border border-white/20">
+              <label class="text-[10px] font-bold opacity-80 uppercase ml-1">Tambah Uang Masuk</label>
+              <div class="flex flex-col gap-2 mt-2">
+                <input
+                  type="text"
+                  id="topUpAmountInput"
+                  placeholder="Contoh: 50.000"
+                  inputmode="numeric"
+                  class="w-full p-3 bg-white/10 rounded-xl text-white placeholder-white/50 font-bold outline-none border border-white/10 text-center">
+                <button
+                  onclick="setAllowance()"
+                  class="w-full bg-[#2CC295] py-2 rounded-xl font-bold text-xs uppercase hover:bg-white hover:text-[#03624C] transition">
+                  Selesai
+                </button>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="space-y-2">
+              <div class="flex justify-between text-[10px] font-bold uppercase opacity-80">
+                <span>Pemakaian</span>
+                <span id="percentText">0%</span>
+              </div>
+              <div class="w-full bg-black/20 h-3 rounded-full overflow-hidden p-[2px]">
+                <div id="progressBar" class="bg-[#2CC295] h-full rounded-full transition-all duration-700" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="mt-6 flex justify-between text-[10px] opacity-70 border-t border-white/10 pt-4 font-bold uppercase tracking-tighter">
+              <p>Saku: <span id="allowanceDisplay">Rp 0</span></p>
+              <p>Jajan: <span id="totalUsedDisplay">Rp 0</span></p>
+            </div>
+          </div>
+          <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full z-0"></div>
+        </div>
+
+        <!-- Card AI Financial Plan -->
+        <div class="bg-white border-2 border-[#2CC295]/10 p-6 rounded-[2.5rem] shadow-sm">
+          <h3 class="font-bold text-[#03624C] mb-4 flex items-center gap-2">✨ AI Financial Plan</h3>
+          <div class="bg-slate-50 p-4 rounded-2xl mb-4 space-y-1 border border-slate-100">
+            <div class="allocation-item flex justify-between py-1 border-b border-dashed border-slate-200">
+              <span class="text-[10px] font-bold text-slate-500 uppercase">Kebutuhan (50%)</span>
+              <span id="allocNeeds" class="text-[11px] font-extrabold text-[#03624C]">Rp 0</span>
+            </div>
+            <div class="allocation-item flex justify-between py-1 border-b border-dashed border-slate-200">
+              <span class="text-[10px] font-bold text-slate-500 uppercase">Keinginan (30%)</span>
+              <span id="allocWants" class="text-[11px] font-extrabold text-[#2CC295]">Rp 0</span>
+            </div>
+            <div class="allocation-item flex justify-between py-1">
+              <span class="text-[10px] font-bold text-slate-500 uppercase">Tabungan (20%)</span>
+              <span id="allocSavings" class="text-[11px] font-extrabold text-blue-500">Rp 0</span>
+            </div>
+          </div>
+          <p id="aiResponse" class="text-[11px] text-slate-500 italic leading-relaxed"></p>
+        </div>
+
+        <!-- Card Form Catat Pengeluaran -->
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+          <h3 class="font-bold mb-5 text-slate-700">Catat Pengeluaran</h3>
+          <div class="space-y-4">
+            <input
+              type="text"
+              id="jajanNameInput"
+              placeholder="Jajan apa?"
+              class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#2CC295] font-semibold border border-transparent">
+            <input
+              type="text"
+              id="jajanPriceInput"
+              placeholder="Harga"
+              inputmode="numeric"
+              class="w-full p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#2CC295] font-semibold border border-transparent">
+            <button
+              id="btnSimpan"
+              onclick="saveExpense()"
+              class="w-full bg-[#2CC295] hover:bg-[#03624C] text-white py-4 rounded-2xl font-bold transition-all shadow-xl active:scale-95 text-[10px] uppercase tracking-widest mt-2">
+              Simpan Catatan
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ════ KOLOM KANAN (8/12) ════ -->
+      <div class="lg:col-span-8">
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 min-h-[600px]">
+
+          <!-- Header Riwayat + Filter -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+            <div>
+              <h3 class="text-xl font-bold text-slate-800 tracking-tight">Riwayat Keuangan</h3>
+              <p class="text-[10px] text-slate-400 font-bold uppercase mt-1">
+                Total <span id="totalTransaksi">0</span> transaksi
+              </p>
+            </div>
+            <div class="flex bg-slate-100 rounded-2xl p-1 gap-1">
+              <button onclick="setFilter('all')" id="filter-all"
+                class="filter-tab active-tab text-[10px] font-bold uppercase px-3 py-1.5 rounded-xl transition-all">
+                Semua
+              </button>
+              <button onclick="setFilter('income')" id="filter-income"
+                class="filter-tab text-[10px] font-bold uppercase px-3 py-1.5 rounded-xl transition-all text-slate-500">
+                💰 Masuk
+              </button>
+              <button onclick="setFilter('expense')" id="filter-expense"
+                class="filter-tab text-[10px] font-bold uppercase px-3 py-1.5 rounded-xl transition-all text-slate-500">
+                💸 Keluar
+              </button>
+            </div>
+          </div>
+
+          <!-- Summary Strip -->
+          <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="bg-green-50 rounded-2xl p-3 text-center border border-green-100">
+              <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Total Masuk</p>
+              <p id="summaryIncome" class="text-sm font-extrabold text-[#2CC295]">Rp 0</p>
+            </div>
+            <div class="bg-red-50 rounded-2xl p-3 text-center border border-red-100">
+              <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Total Keluar</p>
+              <p id="summaryExpense" class="text-sm font-extrabold text-red-500">Rp 0</p>
+            </div>
+            <div class="bg-slate-50 rounded-2xl p-3 text-center border border-slate-100">
+              <p class="text-[9px] font-bold text-slate-500 uppercase mb-1">Net Saldo</p>
+              <p id="summaryNet" class="text-sm font-extrabold text-slate-700">Rp 0</p>
+            </div>
+          </div>
+
+          <!-- Daftar Transaksi -->
+          <div id="jajanListContainer" class="space-y-3 max-h-[500px] overflow-y-auto pr-1"></div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>

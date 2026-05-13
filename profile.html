@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profil — KantinKu Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F1F7F6; }
+    .input-field {
+      width: 100%; padding: 12px 16px; background: #f8fafc;
+      border: 2px solid transparent; border-radius: 12px;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px;
+      font-weight: 500; color: #1e293b; outline: none;
+      transition: all 0.2s; box-sizing: border-box;
+    }
+    .input-field:focus { background: white; border-color: #2CC295; box-shadow: 0 0 0 4px rgba(44,194,149,0.1); }
+    .input-field:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn { padding: 12px 24px; border-radius: 12px; font-weight: 700;
+           font-size: 13px; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-primary { background: #03624C; color: white; }
+    .btn-primary:hover { background: #048a6a; }
+    .btn-danger { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+    .btn-danger:hover { background: #ef4444; color: white; }
+    .alert { padding: 12px 16px; border-radius: 12px; font-size: 13px;
+             font-weight: 600; margin-bottom: 16px; display: none; }
+    .alert.success { background: #f0fdf4; color: #14532d; border: 1px solid #bbf7d0; display: block; }
+    .alert.error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; display: block; }
+  </style>
+</head>
+<body>
+  <div style="max-width:500px; margin:0 auto; padding:2rem 1rem;">
+
+    <!-- Back button -->
+    <a href="index.html" style="display:inline-flex; align-items:center; gap:8px; color:#03624C; font-weight:700; font-size:14px; text-decoration:none; margin-bottom:24px;">
+      ← Kembali ke Dashboard
+    </a>
+
+    <!-- Header -->
+    <div style="text-align:center; margin-bottom:2rem;">
+      <div style="width:80px; height:80px; background:#03624C; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:36px;">
+        👤
+      </div>
+      <h1 style="font-size:20px; font-weight:800; color:#03624C; margin:0;" id="headerNama">...</h1>
+      <p style="color:#64748b; font-size:13px; margin-top:4px;" id="headerEmail">...</p>
+    </div>
+
+    <!-- Card Profil -->
+    <div style="background:white; border-radius:24px; padding:1.5rem; box-shadow:0 4px 16px rgba(0,0,0,0.06); margin-bottom:1rem;">
+      <h2 style="font-size:14px; font-weight:700; color:#03624C; margin:0 0 16px;">Informasi Akun</h2>
+      <div id="alertProfil" class="alert"></div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; display:block; margin-bottom:6px;">Nama Lengkap</label>
+        <input type="text" id="inputNama" class="input-field" placeholder="Nama kamu">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; display:block; margin-bottom:6px;">Email</label>
+        <input type="email" id="inputEmail" class="input-field" disabled style="cursor:not-allowed;">
+        <p style="font-size:11px; color:#94a3b8; margin-top:4px;">Email tidak dapat diubah</p>
+      </div>
+
+      <button class="btn btn-primary" onclick="simpanProfil()" id="btnSimpan" style="width:100%;">Simpan Perubahan</button>
+    </div>
+
+    <!-- Card Ganti Password -->
+    <div style="background:white; border-radius:24px; padding:1.5rem; box-shadow:0 4px 16px rgba(0,0,0,0.06); margin-bottom:1rem;">
+      <h2 style="font-size:14px; font-weight:700; color:#03624C; margin:0 0 16px;">Ganti Password</h2>
+      <div id="alertPassword" class="alert"></div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; display:block; margin-bottom:6px;">Password Lama</label>
+        <input type="password" id="passLama" class="input-field" placeholder="Password saat ini">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; display:block; margin-bottom:6px;">Password Baru</label>
+        <input type="password" id="passBaru" class="input-field" placeholder="Minimal 6 karakter">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; display:block; margin-bottom:6px;">Konfirmasi Password Baru</label>
+        <input type="password" id="passConfirm" class="input-field" placeholder="Ulangi password baru">
+      </div>
+
+      <button class="btn btn-primary" onclick="gantiPassword()" style="width:100%;">Ganti Password</button>
+    </div>
+
+    <!-- Danger Zone -->
+    <div style="background:white; border-radius:24px; padding:1.5rem; box-shadow:0 4px 16px rgba(0,0,0,0.06); border:1px solid #fecaca;">
+      <h2 style="font-size:14px; font-weight:700; color:#ef4444; margin:0 0 8px;">Zona Berbahaya</h2>
+      <p style="font-size:13px; color:#64748b; margin:0 0 16px;">Tindakan berikut tidak dapat dibatalkan.</p>
+      <button class="btn btn-danger" onclick="hapusSemuaTransaksi()" style="width:100%;">🗑️ Hapus Semua Riwayat Transaksi</button>
+    </div>
+
+  </div>
+
+  <script>
+    // Ambil data profil saat halaman dibuka
+    async function loadProfil() {
+      const res  = await fetch('api/auth.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=cek_session'
+      });
+      const data = await res.json();
+
+      if (!data.logged_in) { window.location.href = 'login.html'; return; }
+
+      document.getElementById('headerNama').textContent  = data.nama;
+      document.getElementById('headerEmail').textContent = data.email;
+      document.getElementById('inputNama').value         = data.nama;
+      document.getElementById('inputEmail').value        = data.email;
+    }
+
+    async function simpanProfil() {
+      const nama = document.getElementById('inputNama').value.trim();
+      if (!nama) { showAlert('alertProfil', 'Nama tidak boleh kosong!', 'error'); return; }
+
+      const res  = await fetch('api/profil.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=update_nama&nama=' + encodeURIComponent(nama)
+      });
+      const data = await res.json();
+      showAlert('alertProfil', data.message, data.success ? 'success' : 'error');
+      if (data.success) { document.getElementById('headerNama').textContent = nama; }
+    }
+
+    async function gantiPassword() {
+      const lama    = document.getElementById('passLama').value;
+      const baru    = document.getElementById('passBaru').value;
+      const confirm = document.getElementById('passConfirm').value;
+
+      if (!lama || !baru || !confirm) { showAlert('alertPassword', 'Semua field harus diisi!', 'error'); return; }
+      if (baru.length < 6)            { showAlert('alertPassword', 'Password baru minimal 6 karakter!', 'error'); return; }
+      if (baru !== confirm)           { showAlert('alertPassword', 'Password baru tidak cocok!', 'error'); return; }
+
+      const res  = await fetch('api/profil.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=ganti_password&password_lama=' + encodeURIComponent(lama) + '&password_baru=' + encodeURIComponent(baru)
+      });
+      const data = await res.json();
+      showAlert('alertPassword', data.message, data.success ? 'success' : 'error');
+      if (data.success) {
+        document.getElementById('passLama').value    = '';
+        document.getElementById('passBaru').value    = '';
+        document.getElementById('passConfirm').value = '';
+      }
+    }
+
+    async function hapusSemuaTransaksi() {
+      if (!confirm('YAKIN ingin menghapus SEMUA riwayat transaksi?\n\nTindakan ini TIDAK BISA dibatalkan!')) return;
+      const res  = await fetch('api/transaksi.php', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hapus_semua: true })
+      });
+      const data = await res.json();
+      alert(data.success ? 'Semua transaksi berhasil dihapus.' : 'Gagal menghapus.');
+    }
+
+    function showAlert(id, msg, type) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.className   = 'alert ' + type;
+    }
+
+    loadProfil();
+  </script>
+</body>
+</html>
