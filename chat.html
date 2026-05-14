@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiku AI — KantinKu</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #F1F7F6;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(135deg, #03624C 0%, #048a6a 100%);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: 0 2px 16px rgba(3,98,76,0.3);
+    }
+    .header-left  { display: flex; align-items: center; gap: 12px; }
+    .back-btn     { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 22px; line-height: 1; transition: color 0.2s; }
+    .back-btn:hover { color: white; }
+    .ai-avatar    { width: 40px; height: 40px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid rgba(255,255,255,0.2); }
+    .ai-name      { color: white; font-weight: 800; font-size: 15px; line-height: 1.2; }
+    .ai-subtitle  { color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 500; }
+    .status-dot   { display: flex; align-items: center; gap: 6px; }
+    .dot          { width: 8px; height: 8px; background: #2CC295; border-radius: 50%; animation: pulse 2s infinite; }
+    .status-text  { color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 600; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+    /* ── CHAT AREA ── */
+    #chatMessages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    #chatMessages::-webkit-scrollbar       { width: 4px; }
+    #chatMessages::-webkit-scrollbar-track { background: transparent; }
+    #chatMessages::-webkit-scrollbar-thumb { background: #2CC295; border-radius: 99px; }
+
+    /* ── BUBBLE ── */
+    .bubble-row       { display: flex; gap: 10px; align-items: flex-end; animation: fadeUp 0.3s ease-out; }
+    .bubble-row.user  { flex-direction: row-reverse; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .avatar.ai   { background: linear-gradient(135deg, #03624C, #2CC295); }
+    .avatar.user { background: #e2e8f0; }
+
+    .bubble {
+      max-width: 70%;
+      padding: 11px 15px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+    .bubble.ai {
+      background: white;
+      color: #1e293b;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    }
+    .bubble.user {
+      background: #03624C;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .bubble.ai strong { font-weight: 700; color: #03624C; }
+    .bubble.ai em     { font-style: italic; color: #64748b; }
+
+    /* ── TYPING ── */
+    .typing-dots { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
+    .dot-anim {
+      width: 7px; height: 7px; background: #94a3b8;
+      border-radius: 50%; animation: bounce 1.2s infinite;
+    }
+    .dot-anim:nth-child(2) { animation-delay: 0.2s; }
+    .dot-anim:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0);opacity:0.4;} 30%{transform:translateY(-6px);opacity:1;} }
+
+    /* ── SUGGESTION CHIPS ── */
+    #chipArea {
+      padding: 4px 16px 12px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+    #chipArea::-webkit-scrollbar { display: none; }
+    .chip {
+      padding: 7px 14px;
+      background: rgba(44,194,149,0.1);
+      color: #03624C;
+      border: 1.5px solid rgba(44,194,149,0.3);
+      border-radius: 99px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .chip:hover { background: #03624C; color: white; border-color: #03624C; }
+
+    /* ── INPUT AREA ── */
+    .input-area {
+      background: white;
+      border-top: 1px solid #f1f5f9;
+      padding: 12px 16px;
+      flex-shrink: 0;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    #inputChat {
+      flex: 1;
+      padding: 11px 15px;
+      background: #f8fafc;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1e293b;
+      outline: none;
+      resize: none;
+      max-height: 120px;
+      transition: all 0.2s;
+      line-height: 1.5;
+    }
+    #inputChat:focus      { border-color: #2CC295; background: white; box-shadow: 0 0 0 4px rgba(44,194,149,0.1); }
+    #inputChat::placeholder { color: #94a3b8; }
+
+    #btnKirim {
+      width: 44px; height: 44px;
+      background: #03624C;
+      border: none; border-radius: 12px;
+      cursor: pointer; color: white; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    #btnKirim:hover    { background: #048a6a; transform: scale(1.05); }
+    #btnKirim:active   { transform: scale(0.95); }
+    #btnKirim:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+
+    .disclaimer {
+      text-align: center;
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <a href="index.html" class="back-btn">←</a>
+      <div class="ai-avatar">🤖</div>
+      <div>
+        <p class="ai-name">Kiku AI</p>
+        <p class="ai-subtitle">Asisten Keuangan KantinKu · Powered by Gemini</p>
+      </div>
+    </div>
+    <div class="status-dot">
+      <div class="dot"></div>
+      <span class="status-text">Online</span>
+    </div>
+  </header>
+
+  <!-- CHAT MESSAGES -->
+  <div id="chatMessages"></div>
+
+  <!-- SUGGESTION CHIPS -->
+  <div id="chipArea">
+    <button class="chip" onclick="pakaiChip(this)">💰 Analisa keuanganku</button>
+    <button class="chip" onclick="pakaiChip(this)">📊 Tips hemat uang saku</button>
+    <button class="chip" onclick="pakaiChip(this)">🐷 Cara menabung efektif</button>
+    <button class="chip" onclick="pakaiChip(this)">🎯 Cara atur budget bulanan</button>
+    <button class="chip" onclick="pakaiChip(this)">❓ Bedanya kebutuhan & keinginan</button>
+  </div>
+
+  <!-- INPUT AREA -->
+  <div class="input-area">
+    <div class="input-row">
+      <textarea
+        id="inputChat"
+        placeholder="Tanya Kiku soal keuanganmu..."
+        rows="1"
+        onkeydown="handleEnter(event)"
+        oninput="autoResize(this)">
+      </textarea>
+      <button id="btnKirim" onclick="kirimPesan()">➤</button>
+    </div>
+    <p class="disclaimer">Kiku AI · Google Gemini · Bukan nasihat keuangan profesional</p>
+  </div>
+
+  <script>
+    // ── STATE ──
+    let riwayat  = []; // Riwayat percakapan untuk konteks AI
+    let loading  = false;
+    let namaUser = '';
+
+    // ── INIT ──
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Cek login
+      try {
+        const res  = await fetch('api/auth.php', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body:    'action=cek_session'
+        });
+        const data = await res.json();
+        if (!data.logged_in) { window.location.href = 'login.html'; return; }
+        namaUser = data.nama;
+      } catch(e) {
+        console.warn('Gagal cek session:', e);
+      }
+
+      // Pesan sambutan dari Kiku
+      tampilAI(
+        `Halo **${namaUser || 'Kamu'}**! 👋 Aku **Kiku**, asisten keuangan pintarmu.\n\n` +
+        `Aku sudah baca data keuanganmu dan siap membantu! Kamu bisa tanya:\n` +
+        `• 📊 Analisa kondisi keuangan saat ini\n` +
+        `• 💡 Tips hemat dan menabung\n` +
+        `• 🏷️ Kenapa suatu pengeluaran masuk kebutuhan atau keinginan\n` +
+        `• 🎯 Cara bikin target keuangan\n\n` +
+        `Atau pilih salah satu pertanyaan di bawah! 😊`
+      );
+    });
+
+    // ── RENDER BUBBLE AI ──
+    function tampilAI(teks) {
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-row';
+      wrap.innerHTML = `
+        <div class="avatar ai">🤖</div>
+        <div class="bubble ai">${formatMd(teks)}</div>
+      `;
+      document.getElementById('chatMessages').appendChild(wrap);
+      scrollDown();
+    }
+
+    // ── RENDER BUBBLE USER ──
+    function tampilUser(teks) {
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-row user';
+      wrap.innerHTML = `
+        <div class="bubble user">${esc(teks)}</div>
+        <div class="avatar user">👤</div>
+      `;
+      document.getElementById('chatMessages').appendChild(wrap);
+      scrollDown();
+    }
+
+    // ── TYPING INDICATOR ──
+    function tampilTyping() {
+      const wrap = document.createElement('div');
+      wrap.className = 'bubble-row';
+      wrap.id = 'typing';
+      wrap.innerHTML = `
+        <div class="avatar ai">🤖</div>
+        <div class="bubble ai">
+          <div class="typing-dots">
+            <div class="dot-anim"></div>
+            <div class="dot-anim"></div>
+            <div class="dot-anim"></div>
+          </div>
+        </div>
+      `;
+      document.getElementById('chatMessages').appendChild(wrap);
+      scrollDown();
+    }
+    function hapusTyping() { document.getElementById('typing')?.remove(); }
+
+    // ── KIRIM PESAN ──
+    async function kirimPesan() {
+      if (loading) return;
+      const input = document.getElementById('inputChat');
+      const pesan = input.value.trim();
+      if (!pesan) return;
+
+      // Sembunyikan chips setelah pesan pertama dikirim
+      document.getElementById('chipArea').style.display = 'none';
+
+      tampilUser(pesan);
+      input.value = '';
+      input.style.height = 'auto';
+
+      loading = true;
+      document.getElementById('btnKirim').disabled = true;
+      tampilTyping();
+
+      try {
+        const res  = await fetch('api/gemini.php', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ mode: 'chat', pesan, riwayat }),
+        });
+        const data = await res.json();
+        hapusTyping();
+
+        if (data.success) {
+          tampilAI(data.balasan);
+          // Simpan ke riwayat untuk konteks percakapan selanjutnya
+          riwayat.push({ role: 'user',  text: pesan });
+          riwayat.push({ role: 'model', text: data.balasan });
+          // Batasi 20 pesan terakhir agar tidak terlalu berat
+          if (riwayat.length > 20) riwayat = riwayat.slice(-20);
+        } else {
+          tampilAI(`Maaf, aku lagi gangguan nih 😔\n_${data.message}_\n\nCoba beberapa saat lagi ya!`);
+        }
+
+      } catch(err) {
+        hapusTyping();
+        tampilAI('Waduh, koneksi bermasalah 😔 Pastikan internet aktif dan coba lagi!');
+      }
+
+      loading = false;
+      document.getElementById('btnKirim').disabled = false;
+      input.focus();
+    }
+
+    // ── CHIP SUGGESTION ──
+    function pakaiChip(btn) {
+      document.getElementById('inputChat').value = btn.textContent.trim().replace(/^[^\s]+\s/, '');
+      kirimPesan();
+    }
+
+    // ── KEYBOARD ──
+    function handleEnter(e) {
+      // Enter = kirim, Shift+Enter = baris baru
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        kirimPesan();
+      }
+    }
+
+    // ── AUTO RESIZE TEXTAREA ──
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    // ── SCROLL KE BAWAH ──
+    function scrollDown() {
+      const el = document.getElementById('chatMessages');
+      setTimeout(() => el.scrollTop = el.scrollHeight, 50);
+    }
+
+    // ── FORMAT MARKDOWN SEDERHANA ──
+    function formatMd(teks) {
+      return esc(teks)
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g,     '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+    }
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.appendChild(document.createTextNode(str));
+      return d.innerHTML;
+    }
+  </script>
+
+</body>
+</html>

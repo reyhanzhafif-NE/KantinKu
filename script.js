@@ -416,3 +416,118 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Ambil data transaksi dari database
   await fetchTransaksi();
 });
+
+// ============================================================
+// MINI CHATBOT KIKU AI — untuk sidebar dashboard
+// ============================================================
+
+let miniRiwayat  = [];
+let miniLoading  = false;
+
+function miniTampilPesan(teks, role) {
+  const container = document.getElementById('miniChatMessages');
+  if (!container) return;
+
+  const isAI    = role === 'ai';
+  const div     = document.createElement('div');
+  div.style.cssText = `
+    display:flex; gap:8px; align-items:flex-end;
+    ${isAI ? '' : 'flex-direction:row-reverse;'}
+    animation: fadeIn 0.3s ease-out;
+  `;
+
+  const bubble = document.createElement('div');
+  bubble.style.cssText = `
+    max-width:80%; padding:8px 12px; font-size:12px;
+    line-height:1.5; border-radius:12px;
+    ${isAI
+      ? 'background:white;color:#1e293b;border-bottom-left-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.08);'
+      : 'background:#03624C;color:white;border-bottom-right-radius:3px;'
+    }
+  `;
+
+  bubble.innerHTML = isAI
+    ? teks.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')
+    : escapeHTML(teks);
+
+  const avatar = document.createElement('div');
+  avatar.style.cssText = `
+    width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;
+    ${isAI ? 'background:linear-gradient(135deg,#03624C,#2CC295);' : 'background:#e2e8f0;'}
+  `;
+  avatar.textContent = isAI ? '🤖' : '👤';
+
+  if (isAI) { div.appendChild(avatar); div.appendChild(bubble); }
+  else       { div.appendChild(bubble); div.appendChild(avatar); }
+
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function miniTampilTyping() {
+  const container = document.getElementById('miniChatMessages');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.id = 'miniTyping';
+  div.style.cssText = 'display:flex;gap:8px;align-items:flex-end;';
+  div.innerHTML = `
+    <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#03624C,#2CC295);display:flex;align-items:center;justify-content:center;font-size:12px;">🤖</div>
+    <div style="background:white;padding:10px 14px;border-radius:12px;border-bottom-left-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:flex;gap:4px;align-items:center;">
+      <div style="width:6px;height:6px;background:#94a3b8;border-radius:50%;animation:typing 1.2s infinite;"></div>
+      <div style="width:6px;height:6px;background:#94a3b8;border-radius:50%;animation:typing 1.2s 0.2s infinite;"></div>
+      <div style="width:6px;height:6px;background:#94a3b8;border-radius:50%;animation:typing 1.2s 0.4s infinite;"></div>
+    </div>
+    <style>@keyframes typing{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-5px);opacity:1;}}</style>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+async function kirimMiniChat() {
+  if (miniLoading) return;
+  const input = document.getElementById('miniChatInput');
+  const btn   = document.getElementById('btnMiniKirim');
+  const pesan = input?.value.trim();
+  if (!pesan) return;
+
+  miniTampilPesan(pesan, 'user');
+  input.value = '';
+  miniLoading = true;
+  if (btn) btn.disabled = true;
+  miniTampilTyping();
+
+  try {
+    const res  = await fetch('api/gemini.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ mode:'chat', pesan, riwayat: miniRiwayat }),
+    });
+    const data = await res.json();
+    document.getElementById('miniTyping')?.remove();
+
+    if (data.success) {
+      miniTampilPesan(data.balasan, 'ai');
+      miniRiwayat.push({ role:'user',  text: pesan });
+      miniRiwayat.push({ role:'model', text: data.balasan });
+      if (miniRiwayat.length > 10) miniRiwayat = miniRiwayat.slice(-10);
+    } else {
+      miniTampilPesan('Maaf, aku sedang gangguan 😔 Coba lagi ya!', 'ai');
+    }
+  } catch(e) {
+    document.getElementById('miniTyping')?.remove();
+    miniTampilPesan('Koneksi bermasalah, coba lagi!', 'ai');
+  }
+
+  miniLoading = false;
+  if (btn) btn.disabled = false;
+  input?.focus();
+}
+
+// Inisialisasi mini chat saat halaman load
+document.addEventListener('DOMContentLoaded', () => {
+  // Pesan sambutan mini chat muncul setelah data selesai dimuat
+  setTimeout(() => {
+    miniTampilPesan('Halo! Aku Kiku 👋 Ada yang bisa aku bantu soal keuanganmu?', 'ai');
+  }, 1000);
+});

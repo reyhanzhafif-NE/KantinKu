@@ -180,6 +180,7 @@
       <div class="lg:col-span-8">
         <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 min-h-[600px]">
 
+
           <!-- Header Riwayat + Filter -->
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
             <div>
@@ -201,7 +202,55 @@
                 class="filter-tab text-[10px] font-bold uppercase px-3 py-1.5 rounded-xl transition-all text-slate-500">
                 💸 Keluar
               </button>
-            </div>
+            </div><!-- Tambahkan ini setelah penutup </div> card riwayat transaksi -->
+
+<!-- ── MINI CHATBOT KIKU AI ── -->
+<div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 mt-6 overflow-hidden">
+
+  <!-- Header Mini Chat -->
+  <div style="background:linear-gradient(135deg,#03624C,#048a6a); padding:16px 20px; display:flex; align-items:center; justify-content:space-between;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="width:34px;height:34px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">🤖</div>
+      <div>
+        <p style="color:white;font-weight:800;font-size:14px;margin:0;line-height:1.2;">Kiku AI</p>
+        <p style="color:rgba(255,255,255,0.6);font-size:10px;margin:0;">Tanya soal keuanganmu</p>
+      </div>
+    </div>
+    <a href="chat.html"
+       style="background:rgba(255,255,255,0.15);color:white;font-size:11px;font-weight:700;padding:5px 12px;border-radius:99px;text-decoration:none;border:1px solid rgba(255,255,255,0.2);transition:all 0.2s;"
+       onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+       onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+      Buka Chat Room →
+    </a>
+  </div>
+
+  <!-- Mini Messages -->
+  <div id="miniChatMessages"
+       style="height:240px; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; background:#f8fafc;">
+    <!-- Pesan awal muncul dari JS -->
+  </div>
+
+  <!-- Mini Input -->
+  <div style="padding:12px 16px; background:white; border-top:1px solid #f1f5f9; display:flex; gap:8px; align-items:center;">
+    <input
+      type="text"
+      id="miniChatInput"
+      placeholder="Tanya Kiku..."
+      style="flex:1;padding:10px 14px;background:#f8fafc;border:2px solid transparent;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:500;color:#1e293b;outline:none;transition:all 0.2s;"
+      onfocus="this.style.borderColor='#2CC295';this.style.background='white';"
+      onblur="this.style.borderColor='transparent';this.style.background='#f8fafc';"
+      onkeydown="if(event.key==='Enter') kirimMiniChat()">
+    <button
+      id="btnMiniKirim"
+      onclick="kirimMiniChat()"
+      style="width:38px;height:38px;background:#03624C;border:none;border-radius:10px;cursor:pointer;color:white;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;"
+      onmouseover="this.style.background='#048a6a'"
+      onmouseout="this.style.background='#03624C'">
+      ➤
+    </button>
+  </div>
+</div>
+
           </div>
 
           <!-- Summary Strip -->
