@@ -132,12 +132,12 @@ async function fetchTransaksi() {
 }
 
 /** Kirim transaksi baru ke database */
-async function kirimTransaksi(jenis, jumlah, keterangan) {
+async function kirimTransaksi(jenis, jumlah, keterangan, kategori = '') {
   try {
-    const res = await fetch('api/transaksi.php', {
+    const res  = await fetch('api/transaksi.php', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ jenis, jumlah, keterangan }),
+      body:    JSON.stringify({ jenis, jumlah, keterangan, kategori }),
     });
     const data = await res.json();
     return data.success;
@@ -229,6 +229,15 @@ function updateSummaryStrip(totalIncome, totalExpense, saldo) {
 function renderTransaksiList() {
   const container = document.getElementById('jajanListContainer');
   const totalEl   = document.getElementById('totalTransaksi');
+  const badgeStyle = {
+  'Kebutuhan': 'background:rgba(3,98,76,0.12);color:#03624C;',
+  'Keinginan': 'background:rgba(249,115,22,0.12);color:#c2410c;',
+  'Tabungan':  'background:rgba(59,130,246,0.12);color:#1d4ed8;',
+};
+const badgeIcon = { 'Kebutuhan':'🍱', 'Keinginan':'🎮', 'Tabungan':'🐷' };
+const badgeHTML = (tx.kategori && tx.jenis === 'expense' && badgeStyle[tx.kategori])
+  ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;${badgeStyle[tx.kategori]}">${badgeIcon[tx.kategori]} ${tx.kategori}</span>`
+  : '';
 
   // Filter berdasarkan tab aktif
   // Perhatikan: field dari DB pakai 'jenis', bukan 'type'
@@ -270,9 +279,10 @@ function renderTransaksiList() {
             ${icon}
           </div>
           <div>
-            <p class="font-bold text-slate-800 text-sm">${escapeHTML(tx.keterangan || 'Tanpa keterangan')}</p>
-            <p class="text-[10px] text-slate-400 font-bold uppercase mt-0.5">🕒 ${waktu}</p>
-          </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+           <p class="text-[10px] text-slate-400 font-bold uppercase">🕒 ${waktu}</p>
+           ${badgeHTML}
+        </div>
         </div>
         <div class="flex items-center gap-3">
           <p class="font-bold ${colorClass} tracking-tight">${symbol} Rp ${formatIDR(tx.jumlah)}</p>
@@ -333,16 +343,39 @@ async function saveExpense() {
   }
 
   const btn = document.getElementById('btnSimpan');
-  if (btn) { btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 AI menganalisa...'; }
 
-  // Kirim ke database sebagai transaksi expense
-  const berhasil = await kirimTransaksi('expense', jumlah, nama);
+  // Langkah 1: Minta Gemini kategorikan transaksi
+  let kategori = '';
+  let alasan   = '';
+  try {
+    const resKat  = await fetch('api/gemini.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ mode: 'kategorisasi', keterangan: nama, jumlah }),
+    });
+    const dataKat = await resKat.json();
+    if (dataKat.success) {
+      kategori = dataKat.kategori;
+      alasan   = dataKat.alasan;
+    }
+  } catch(e) {
+    console.warn('Kategorisasi gagal, lanjut tanpa kategori:', e);
+  }
+
+  // Langkah 2: Simpan ke database
+  const berhasil = await kirimTransaksi('expense', jumlah, nama, kategori);
 
   if (berhasil) {
     document.getElementById('jajanNameInput').value  = '';
     document.getElementById('jajanPriceInput').value = '';
-    await fetchTransaksi(); // Reload data dari DB
-    showToast('Pengeluaran berhasil dicatat!');
+    await fetchTransaksi();
+
+    if (kategori && kategori !== 'Tidak Dikategorikan') {
+      showToast(`✅ "${kategori}" — ${alasan}`);
+    } else {
+      showToast('✅ Pengeluaran berhasil dicatat!');
+    }
   }
 
   if (btn) { btn.disabled = false; btn.textContent = 'Simpan Catatan'; }
@@ -377,6 +410,55 @@ function highlightError(id) {
   const el = document.getElementById(id);
   el?.classList.add('ring-2', 'ring-red-400');
   setTimeout(() => el?.classList.remove('ring-2', 'ring-red-400'), 1500);
+}
+
+async function saveExpense() {
+  const nama   = document.getElementById('jajanNameInput').value.trim();
+  const jumlah = parseIDR(document.getElementById('jajanPriceInput').value);
+
+  if (!nama || !jumlah) {
+    if (!nama)   highlightError('jajanNameInput');
+    if (!jumlah) highlightError('jajanPriceInput');
+    return;
+  }
+
+  const btn = document.getElementById('btnSimpan');
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 AI menganalisa...'; }
+
+  // Langkah 1: Minta Gemini kategorikan transaksi
+  let kategori = '';
+  let alasan   = '';
+  try {
+    const resKat  = await fetch('api/gemini.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ mode: 'kategorisasi', keterangan: nama, jumlah }),
+    });
+    const dataKat = await resKat.json();
+    if (dataKat.success) {
+      kategori = dataKat.kategori;
+      alasan   = dataKat.alasan;
+    }
+  } catch(e) {
+    console.warn('Kategorisasi gagal, lanjut tanpa kategori:', e);
+  }
+
+  // Langkah 2: Simpan ke database
+  const berhasil = await kirimTransaksi('expense', jumlah, nama, kategori);
+
+  if (berhasil) {
+    document.getElementById('jajanNameInput').value  = '';
+    document.getElementById('jajanPriceInput').value = '';
+    await fetchTransaksi();
+
+    if (kategori && kategori !== 'Tidak Dikategorikan') {
+      showToast(`✅ "${kategori}" — ${alasan}`);
+    } else {
+      showToast('✅ Pengeluaran berhasil dicatat!');
+    }
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Simpan Catatan'; }
 }
 
 function setupEnterKey() {
