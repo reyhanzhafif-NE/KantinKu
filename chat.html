@@ -316,11 +316,18 @@
       tampilTyping();
 
       try {
-        const res  = await fetch('api/gemini.php', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ mode: 'chat', pesan, riwayat }),
-        });
+        const res  = await fetch('gemini.php', {
+    method: 'POST',
+    body: JSON.stringify({ message: userInput })
+})
+.then(res => res.json())
+.then(data => {
+    if(data.success) {
+        appendMessage('Kiku', data.reply); // Menampilkan balasan AI
+    } else {
+        alert(data.message);
+    }
+});
         const data = await res.json();
         hapusTyping();
 
