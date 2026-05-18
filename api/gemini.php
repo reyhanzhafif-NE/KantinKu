@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 
 // 1. Masukkan API Key kamu di sini
-$apiKey = "AIzaSyDSTaXJdT9cG-NVQEJEXWjEyVS2FqedxRs"; 
+ 
 $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $apiKey;
 
 // 2. Ambil pesan dari Frontend
