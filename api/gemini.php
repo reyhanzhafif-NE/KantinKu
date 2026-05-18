@@ -1,9 +1,19 @@
 <?php
 header('Content-Type: application/json');
 
-// 1. Masukkan API Key kamu di sini
- 
-$url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $apiKey;
+// Load Gemini configuration
+require_once '../config/app.php';
+
+// Validasi API key tersedia
+if (!defined('GEMINI_API_KEY') || GEMINI_API_KEY === 'NOT_SET') {
+    echo json_encode([
+        'success' => false, 
+        'message' => 'API Key tidak ditemukan. Pastikan file .env ada dan GEMINI_API_KEY sudah diisi.'
+    ]);
+    exit;
+}
+
+$url = GEMINI_API_URL;
 
 // 2. Ambil pesan dari Frontend
 $input = json_decode(file_get_contents('php://input'), true);
