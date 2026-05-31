@@ -36,26 +36,29 @@ ls -la .env
 Jika tidak ada, buat file:
 
 ```bash
-nano .env
-```
-
-Isi dengan:
-
-```env
+cat > .env << 'EOF'
 # Gemini AI Configuration
 GEMINI_API_KEY=AIzaSyChppkMN8-xpIjCMwrFuBl5oC-nk1YMjpE
-GEMINI_MODEL=gemini-1.5-flash
-
-# Database Configuration (jika diperlukan)
-# DB_HOST=localhost
-# DB_NAME=kantinku
-# DB_USER=root
-# DB_PASS=
+GEMINI_MODEL=gemini-pro
+EOF
 ```
 
-**Ganti `AIzaSyChppkMN8...` dengan API key Gemini kamu yang sebenarnya!**
+**⚠️ PENTING:**
+- Ganti `AIzaSyChppkMN8...` dengan **API key Gemini kamu yang asli**
+- Gunakan model `gemini-pro` (paling stable dan gratis)
+- **Jangan gunakan** `gemini-1.5-flash` (mungkin error di v1 endpoint)
 
-### 3. Set Permission File `.env`
+### 3. Pastikan File `config/app.php` Ada
+
+File ini harus sudah ada dan berisi:
+
+```bash
+cat config/app.php
+```
+
+Jika tidak ada atau error, pastikan sudah update dari Git terbaru.
+
+### 4. Set Permission File `.env`
 
 Pastikan file `.env` tidak bisa diakses publik:
 
@@ -66,44 +69,27 @@ chmod 644 config/env-loader.php
 chmod 755 api/
 ```
 
-### 4. Set Permission Folder
+### 5. Set Permission Folder
 
 ```bash
 chown -R www-data:www-data /var/www/html/kantinku
 chmod -R 755 /var/www/html/kantinku
 ```
 
-### 5. Test di Browser
-
-Buka URL aplikasi kamu di browser dan coba gunakan chatbot/fitur AI. Jika error, lihat log error.
-
-### 6. Debug Jika Ada Error
-
-#### Check log PHP error:
+### 6. Restart Apache/PHP
 
 ```bash
-tail -f /var/log/apache2/error.log
+sudo systemctl restart apache2
+# atau jika pakai Nginx:
+sudo systemctl restart nginx
+sudo systemctl restart php-fpm
 ```
 
-atau
+### 7. Test di Browser
 
-```bash
-tail -f /var/log/php-fpm.log
-```
+Buka URL aplikasi kamu di browser dan coba gunakan chatbot. Kirim pesan seperti "Apakah membeli buku itu kebutuhan?"
 
-#### Test API secara langsung:
-
-```bash
-curl -X POST http://your-domain.com/api/gemini.php \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Halo"}'
-```
-
-#### Check apakah `.env` terbaca:
-
-```bash
-php -r "require 'config/app.php'; echo 'GEMINI_API_KEY: ' . GEMINI_API_KEY;"
-```
+Seharusnya AI akan menjawab dengan analisis tentang kebutuhan vs keinginan.
 
 ## 🔒 Keamanan
 

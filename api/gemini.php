@@ -3,6 +3,12 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 
+// Tangani preflight request dari CORS
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
 // Load Gemini configuration
 require_once '../config/app.php';
 
@@ -16,11 +22,26 @@ if (!defined('GEMINI_API_KEY') || GEMINI_API_KEY === 'NOT_SET') {
     exit;
 }
 
-$url = GEMINI_API_URL;
+// Ambil raw input
+$rawInput = file_get_contents('php://input');
 
-// Ambil pesan dari Frontend
-$input = json_decode(file_get_contents('php://input'), true);
-if (!$input || !isset($input['message'])) {
+// Debug: catat request yang diterima (optional, untuk production bisa dihapus)
+// error_log("Raw input: " . $rawInput);
+
+// Parse JSON
+$input = json_decode($rawInput, true);
+
+// Validasi input
+if (!$input) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Format JSON tidak valid'
+    ]);
+    exit;
+}
+
+if (!isset($input['message']) || empty(trim($input['message']))) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
@@ -30,6 +51,7 @@ if (!$input || !isset($input['message'])) {
 }
 
 $userMessage = $input['message'];
+$url = GEMINI_API_URL;
 
 // Instruksi khusus agar Kiku cerdas
 $systemPrompt = "Kamu adalah Kiku AI, asisten keuangan untuk siswa SMK di Indonesia. 
@@ -39,6 +61,7 @@ Tugasmu:
 3. Gunakan bahasa yang ramah, santai (pake 'kamu'), dan ringkas. 
 Jika ditanya tentang bensin, jelaskan itu kebutuhan untuk sekolah.";
 
+// Format request sesuai Gemini API v1
 $data = [
     "contents" => [
         [
@@ -54,41 +77,53 @@ $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Content-Type: application/json',
+    'Accept: application/json'
+]);
 curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $error = curl_error($ch);
 curl_close($ch);
 
-// Error handling
+// Error handling - cURL error
 if ($error) {
     http_response_code(500);
     echo json_encode([
         'success' => false, 
-        'message' => 'Error koneksi ke Gemini: ' . $error
+        'message' => 'Koneksi ke Gemini gagal: ' . $error
     ]);
     exit;
 }
 
+// Error handling - HTTP error
 if ($httpCode !== 200) {
     http_response_code($httpCode);
+    
+    // Parse error response dari Gemini
+    $errorData = json_decode($response, true);
+    $errorMsg = isset($errorData['error']['message']) 
+        ? $errorData['error']['message'] 
+        : 'HTTP ' . $httpCode;
+    
     echo json_encode([
         'success' => false,
-        'message' => 'Gemini API error (HTTP ' . $httpCode . '): ' . substr($response, 0, 200)
+        'message' => 'Gemini API error: ' . substr($errorMsg, 0, 150)
     ]);
     exit;
 }
 
-// Parse response
+// Parse successful response
 $result = json_decode($response, true);
 
 if (!$result || !isset($result['candidates'][0]['content']['parts'][0]['text'])) {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Respons Gemini tidak sesuai format. Coba lagi nanti.'
+        'message' => 'Respons Gemini tidak valid. Coba lagi nanti.'
     ]);
     exit;
 }
