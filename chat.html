@@ -190,6 +190,7 @@
       <div class="dot"></div>
       <span class="status-text">Online</span>
     </div>
+    <button onclick="hapusChat()" title="Hapus chat history" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s;">🗑️</button>
   </header>
 
   <!-- CHAT MESSAGES -->
@@ -225,6 +226,61 @@
     let loading  = false;
     let namaUser = '';
 
+    // ── SIMPAN KE LOCAL STORAGE ──
+    function simpanChat() {
+      const chatMessages = [];
+      document.querySelectorAll('#chatMessages .bubble-row').forEach(bubble => {
+        const text = bubble.querySelector('.bubble')?.textContent || '';
+        const isUser = bubble.classList.contains('user');
+        if (text && text.trim()) {
+          chatMessages.push({
+            user: isUser,
+            text: text.trim()
+          });
+        }
+      });
+      localStorage.setItem('kantinku_chat_' + (namaUser || 'guest'), JSON.stringify(chatMessages));
+    }
+
+    // ── LOAD DARI LOCAL STORAGE ──
+    function loadChat() {
+      const saved = localStorage.getItem('kantinku_chat_' + (namaUser || 'guest'));
+      if (saved) {
+        try {
+          const messages = JSON.parse(saved);
+          messages.forEach(msg => {
+            if (msg.user) {
+              tampilUser(msg.text);
+            } else {
+              tampilAI(msg.text);
+            }
+          });
+        } catch(e) {
+          console.warn('Gagal load chat history:', e);
+        }
+      }
+    }
+
+    // ── HAPUS CHAT HISTORY ──
+    function hapusChat() {
+      if (confirm('Yakin mau hapus semua chat?')) {
+        localStorage.removeItem('kantinku_chat_' + (namaUser || 'guest'));
+        document.getElementById('chatMessages').innerHTML = '';
+        riwayat = [];
+        // Tampilkan pesan sambutan lagi
+        tampilAI(
+          `Halo **${namaUser || 'Kamu'}**! 👋 Aku **Kiku**, asisten keuangan pintarmu.\n\n` +
+          `Aku sudah baca data keuanganmu dan siap membantu! Kamu bisa tanya:\n` +
+          `• 📊 Analisa kondisi keuangan saat ini\n` +
+          `• 💡 Tips hemat dan menabung\n` +
+          `• 🏷️ Kenapa suatu pengeluaran masuk kebutuhan atau keinginan\n` +
+          `• 🎯 Cara bikin target keuangan\n\n` +
+          `Atau pilih salah satu pertanyaan di bawah! 😊`
+        );
+        simpanChat();
+      }
+    }
+
     // ── INIT ──
     window.addEventListener('DOMContentLoaded', async () => {
       // Cek login
@@ -241,16 +297,25 @@
         console.warn('Gagal cek session:', e);
       }
 
-      // Pesan sambutan dari Kiku
-      tampilAI(
-        `Halo **${namaUser || 'Kamu'}**! 👋 Aku **Kiku**, asisten keuangan pintarmu.\n\n` +
-        `Aku sudah baca data keuanganmu dan siap membantu! Kamu bisa tanya:\n` +
-        `• 📊 Analisa kondisi keuangan saat ini\n` +
-        `• 💡 Tips hemat dan menabung\n` +
-        `• 🏷️ Kenapa suatu pengeluaran masuk kebutuhan atau keinginan\n` +
-        `• 🎯 Cara bikin target keuangan\n\n` +
-        `Atau pilih salah satu pertanyaan di bawah! 😊`
-      );
+      // Cek apakah ada chat history yang disimpan
+      const hasChatHistory = localStorage.getItem('kantinku_chat_' + (namaUser || 'guest'));
+      
+      if (!hasChatHistory) {
+        // Jika tidak ada history, tampilkan pesan sambutan
+        tampilAI(
+          `Halo **${namaUser || 'Kamu'}**! 👋 Aku **Kiku**, asisten keuangan pintarmu.\n\n` +
+          `Aku sudah baca data keuanganmu dan siap membantu! Kamu bisa tanya:\n` +
+          `• 📊 Analisa kondisi keuangan saat ini\n` +
+          `• 💡 Tips hemat dan menabung\n` +
+          `• 🏷️ Kenapa suatu pengeluaran masuk kebutuhan atau keinginan\n` +
+          `• 🎯 Cara bikin target keuangan\n\n` +
+          `Atau pilih salah satu pertanyaan di bawah! 😊`
+        );
+        simpanChat();
+      } else {
+        // Load chat history yang sudah disimpan
+        loadChat();
+      }
     });
 
     // ── RENDER BUBBLE AI ──
@@ -263,6 +328,7 @@
       `;
       document.getElementById('chatMessages').appendChild(wrap);
       scrollDown();
+      simpanChat(); // Simpan setiap kali ada pesan baru
     }
 
     // ── RENDER BUBBLE USER ──
@@ -275,6 +341,7 @@
       `;
       document.getElementById('chatMessages').appendChild(wrap);
       scrollDown();
+      simpanChat(); // Simpan setiap kali ada pesan baru
     }
 
     // ── TYPING INDICATOR ──
